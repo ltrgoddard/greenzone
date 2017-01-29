@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>greenzone</title>
+    </head>
+    <body>
+        <h1 id="status"></h1>
+        <script>
+            var lat = 0
+            var lon = 0
+            var locations = []
+            var distance_travelled = 0
+
+            function errorHandler(err) {
+                console.log('Geolocation error');
+            }
+
+            function getLocation() {
+                var geolocation = navigator.geolocation;
+                geolocation.getCurrentPosition(function(position) {
+                    lat = position.coords.latitude;
+                    lon = position.coords.longitude;
+                    locations.push([lat, lon]);
+                    distance_travelled = distance_travelled +
+                                         distance(locations[locations.length - 1],
+                                         locations[locations.length - 2]);
+                    console.log(distance_travelled);
+                    checkGreenspace(lat, lon);
+                }
+                , errorHandler);
+            }
+
+            setInterval(function(){
+                getLocation();
+            }, 10000);
+
+            function checkGreenspace(lat, lon) {
+
+                var request_url = 'http://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%3B(node%5Btourism%3Dcamp_site%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Blanduse%3Dcemetery%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bleisure%3Dcommon%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bleisure%3Ddog_park%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bnatural%3Dscrub%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bnatural%3Dfell%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Blanduse%3Dforest%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bleisure%3Dgarden%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Blanduse%3Dgreenfield%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bleisure%3Dgolf_course%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Blanduse%3Dgrass%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bnatural%3Dgrassland%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bamenity%3Dgrave_yard%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bnatural%3Dheath%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Blanduse%3Dmeadow%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bnatural%3Dmoor%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bleisure%3Dnature_reserve%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Blanduse%3Dorchard%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bleisure%3Dpark%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bleisure%3Dpitch%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Blanduse%3Drecreation_ground%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Blanduse%3Dvillage_green%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Blanduse%3Dvineyard%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3Bnode%5Bnatural%3Dwood%5D(around%3A100%2C' + lat + '%2C' + lon + ')%3B)%3Bout%3Bout%20body%20geom%3B';
+
+                var req = new XMLHttpRequest();
+
+                // Feature detection for CORS
+                if ('withCredentials' in req) {
+                    req.open('GET', request_url, true);
+                    // Just like regular ol' XHR
+                    req.onreadystatechange = function() {
+                        if (req.readyState === 4) {
+                            if (req.status >= 200 && req.status < 400) {
+                                if (JSON.parse(req.responseText).elements.length == 0) {
+                                    console.log('You\'re outside the green zone!');
+                                }
+                                } else {
+                                console.log('API error');
+                            }
+                        }
+                    };
+                    req.send();
+                }
+            }
+
+            function distance(latlon1, latlon2) {
+                var lat1 = latlon1[0]
+                var lon1 = latlon1[1]
+                var lat2 = latlon2[0]
+                var lon2 = latlon2[1]
+                var p = 0.017453292519943295;    // Math.PI / 180
+                var c = Math.cos;
+                var a = 0.5 - c((lat2 - lat1) * p)/2 + 
+                c(lat1 * p) * c(lat2 * p) * 
+                (1 - c((lon2 - lon1) * p))/2;
+
+                return 12742 * Math.asin(Math.sqrt(a)); // 2 * R; R = 6371 km
+            }
+        </script>
+    </body>
+</html>
